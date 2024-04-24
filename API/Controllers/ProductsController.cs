@@ -1,5 +1,7 @@
+using API.DTOs;
 using Core.Entites;
 using Core.Interfaces;
+using Core.Specification;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -9,50 +11,119 @@ namespace API.Controllers
     public class ProductsController : Controller
     {
         private readonly ILogger<ProductsController> _logger;
-        private readonly IProductRepository _productRepository;
+        private readonly IGenericRepository<Product> _productRepo;
+        private readonly IGenericRepository<ProductBrand> _productbrandRepo;
+        private readonly IGenericRepository<ProductType> _productTypeRepo;
 
-        public ProductsController(ILogger<ProductsController> logger, IProductRepository productRepository)
+        public ProductsController(
+            ILogger<ProductsController> logger,
+            IGenericRepository<Product> productRepo,
+            IGenericRepository<ProductBrand> productbrandRepo,
+            IGenericRepository<ProductType> productTypeRepo
+            )
         {
             _logger = logger;
-            _productRepository = productRepository;
+            _productRepo = productRepo;
+            _productbrandRepo = productbrandRepo;
+            _productTypeRepo = productTypeRepo;
         }
         [HttpGet]
-        public async Task<ActionResult<List<Product>>> GetProducts()
+        public async Task<ActionResult<List<ProductToReturnDto>>> GetProducts()
         {
-            var products = await _productRepository.GetProductsAsync();
-            return Ok(products);
+            _logger.LogInformation("Retrieving products...");
+            var spec = new ProductsWithTypsAndBrandsSpecfication();
+            var products = await _productRepo.ListAsync(spec);
+            _logger.LogInformation($"Retrieved {products.Count} products");
+
+            return products.Select(product => new ProductToReturnDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                PictureUrl = product.PictureUrl,
+                Price = product.Price,
+                ProductBrand = product.ProductBrand.Name,
+                ProductType = product.ProductType.Name
+            }).ToList();
         }
 
         [HttpGet("brands")]
         public async Task<ActionResult<IReadOnlyList<ProductBrand>>> GetProductsBrandsAsync()
         {
-            var productsBrands = await _productRepository.GetProductBransdsAsync();
+            var productsBrands = await _productbrandRepo.ListAllAsync();
             return Ok(productsBrands);
         }
-        [HttpGet("typs")]
+        [HttpGet("types")]
         public async Task<ActionResult<IReadOnlyList<ProductType>>> GetProductsTypsAsync()
         {
-            var productsBrands = await _productRepository.GetProductTypsAsync();
+            var productsBrands = await _productTypeRepo.ListAllAsync();
             return Ok(productsBrands);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<ActionResult<ProductToReturnDto>> GetProduct(int id)
         {
-            var product = await _productRepository.GetProductByIdAsync(id);
+            _logger.LogInformation($"Retrieving product with ID {id}");
+
+            var spec = new ProductsWithTypsAndBrandsSpecfication(id);
+            var product = await _productRepo.GetEntityWithSpec(spec);
             if (product != null)
             {
-                return Ok(product);
+                _logger.LogInformation($"Product with ID {id} retrieved successfully.");
+                return new ProductToReturnDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Description = product.Description,
+                    PictureUrl = product.PictureUrl,
+                    Price = product.Price,
+                    ProductBrand = product.ProductBrand.Name,
+                    ProductType = product.ProductType.Name
+                };
             }
             else
             {
+                _logger.LogWarning($"Product with ID {id} not found.");
                 return NotFound();
             }
         }
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+
+        [HttpPut("UpdateProduct/{id}")]
+        public async Task<ActionResult<Product>> UpdateProduct(int id, ProductToReturnDto productDto)
         {
-            return View("Error!");
+            if (id != productDto.Id)
+            {
+                return BadRequest("ID in the URL does not match the ID in the product data.");
+            }
+
+            var existingProduct = await _productRepo.GetByIdAsync(id);
+
+            if (existingProduct == null)
+            {
+                return NotFound("Product not found.");
+            }
+            //use automapper to udpate the product here 
+            await _productRepo.UpdateAsync(existingProduct);
+
+            _logger.LogInformation($"Product with ID {id} is updated successfully");
+
+            return NoContent();
+        }
+
+        [HttpPost("AddProduct")]
+        public async Task<ActionResult<Product>> AddProduct(ProductToReturnDto productDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            //add automapper here to map from the Dto to the Product
+            await _productRepo.InsertAsync(new Product { });
+
+            _logger.LogInformation($"Product with ID {productDto.Id} is added successfully");
+
+            return CreatedAtAction(nameof(GetProduct), new { id = productDto.Id }, productDto);
         }
     }
 }
