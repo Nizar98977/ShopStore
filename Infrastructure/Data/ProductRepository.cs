@@ -12,10 +12,7 @@ namespace Infrastructure.Data
             _context = context;
         }
 
-        public async Task<IReadOnlyList<ProductBrand>> GetProductBransdsAsync()
-        {
-            return await _context.ProductBrands.ToListAsync();
-        }
+        public async Task<IReadOnlyList<ProductBrand>> GetProductBransdsAsync() => await _context.ProductBrands.ToListAsync();
 
         public async Task<Product> GetProductByIdAsync(int id)
         {
@@ -24,20 +21,17 @@ namespace Infrastructure.Data
                          .Include(p => p.ProductBrand)
                          .FirstOrDefaultAsync(x => x.Id == id);
 
-            return product ?? throw new ArgumentException($"Product with id {id} not found."); // check if null throw error
+            return product ?? throw new ArgumentException($"Product with id {id} not found"); //check if null throw error
         }
 
         public async Task<IReadOnlyList<Product>> GetProductsAsync()
         {
             return await _context.Products
-                .Include(p => p.ProductType)
-                .Include(p => p.ProductBrand)
-                .ToListAsync();
+                    .Include(p => p.ProductType)
+                    .Include(p => p.ProductBrand)
+                    .ToListAsync();
         }
 
-        public async Task<IReadOnlyList<ProductType>> GetProductTypsAsync()
-        {
-            return await _context.ProductTypes.ToListAsync();
-        }
+        public async Task<IReadOnlyList<ProductType>> GetProductTypsAsync() => await _context.ProductTypes.ToListAsync();
     }
 }
