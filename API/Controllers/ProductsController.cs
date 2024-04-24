@@ -1,4 +1,5 @@
 using API.DTOs;
+using AutoMapper;
 using Core.Entites;
 using Core.Interfaces;
 using Core.Specification;
@@ -14,37 +15,31 @@ namespace API.Controllers
         private readonly IGenericRepository<Product> _productRepo;
         private readonly IGenericRepository<ProductBrand> _productbrandRepo;
         private readonly IGenericRepository<ProductType> _productTypeRepo;
+        private readonly IMapper _mapper;
 
         public ProductsController(
             ILogger<ProductsController> logger,
             IGenericRepository<Product> productRepo,
             IGenericRepository<ProductBrand> productbrandRepo,
-            IGenericRepository<ProductType> productTypeRepo
+            IGenericRepository<ProductType> productTypeRepo,
+            IMapper mapper
             )
         {
             _logger = logger;
             _productRepo = productRepo;
             _productbrandRepo = productbrandRepo;
             _productTypeRepo = productTypeRepo;
+            _mapper = mapper;
         }
         [HttpGet]
-        public async Task<ActionResult<List<ProductToReturnDto>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts()
         {
             _logger.LogInformation("Retrieving products...");
             var spec = new ProductsWithTypsAndBrandsSpecfication();
             var products = await _productRepo.ListAsync(spec);
             _logger.LogInformation($"Retrieved {products.Count} products");
 
-            return products.Select(product => new ProductToReturnDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Description = product.Description,
-                PictureUrl = product.PictureUrl,
-                Price = product.Price,
-                ProductBrand = product.ProductBrand.Name,
-                ProductType = product.ProductType.Name
-            }).ToList();
+            return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products));
         }
 
         [HttpGet("brands")]
@@ -70,16 +65,7 @@ namespace API.Controllers
             if (product != null)
             {
                 _logger.LogInformation($"Product with ID {id} retrieved successfully.");
-                return new ProductToReturnDto
-                {
-                    Id = product.Id,
-                    Name = product.Name,
-                    Description = product.Description,
-                    PictureUrl = product.PictureUrl,
-                    Price = product.Price,
-                    ProductBrand = product.ProductBrand.Name,
-                    ProductType = product.ProductType.Name
-                };
+                return _mapper.Map<Product, ProductToReturnDto>(product);
             }
             else
             {

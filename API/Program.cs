@@ -1,4 +1,3 @@
-using Core.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.ExtensionServices;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +20,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapControllers();

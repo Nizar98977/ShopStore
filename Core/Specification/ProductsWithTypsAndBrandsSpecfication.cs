@@ -13,6 +13,8 @@ namespace Core.Specification
         {
             AddInclude(x => x.ProductType);
             AddInclude(x => x.ProductBrand);
+
+            //Think about the ThenInclude
         }
     }
 }
