@@ -27,20 +27,20 @@ namespace Skinet.API.Controllers
             _mapper = mapper;
         }
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<ProductDTO>>> GetProducts()
         {
             _logger.LogInformation("Retrieving products...");
             var spec = new ProductsWithTypsAndBrandsSpecfication();
             var products = await _productRepo.ListAsync(spec);
             _logger.LogInformation($"Retrieved {products.Count} products");
 
-            return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products));
+            return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductDTO>>(products));
         }
 
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ProductToReturnDto>> GetProduct(int id)
+        public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
             _logger.LogInformation($"Retrieving product with ID {id}");
 
@@ -49,7 +49,7 @@ namespace Skinet.API.Controllers
             if (product != null)
             {
                 _logger.LogInformation($"Product with ID {id} retrieved successfully.");
-                return _mapper.Map<Product, ProductToReturnDto>(product);
+                return _mapper.Map<Product, ProductDTO>(product);
             }
             else
             {
@@ -63,7 +63,7 @@ namespace Skinet.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<ActionResult<Product>> UpdateProduct(int id, ProductToReturnDto productDto)
+        public async Task<ActionResult<Product>> UpdateProduct(int id, ProductDTO productDto)
         {
             if (id != productDto.Id)
             {
@@ -86,7 +86,7 @@ namespace Skinet.API.Controllers
 
 
         [HttpPost("AddProduct")]
-        public async Task<ActionResult<Product>> AddProduct(ProductToReturnDto productDto)
+        public async Task<ActionResult<Product>> AddProduct(ProductDTO productDto)
         {
             if (!ModelState.IsValid)
             {
