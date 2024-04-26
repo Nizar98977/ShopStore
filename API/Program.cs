@@ -1,6 +1,7 @@
 using Infrastructure.Data;
 using Infrastructure.ExtensionServices;
 using Microsoft.EntityFrameworkCore;
+using Skinet.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +11,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
-builder.Services.AddCustomServices(builder.Configuration); // Call the custom extension method to services
+builder.Services.AddCustomServices(builder.Configuration);
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+app.UseStatusCodePagesWithReExecute("/NotFound/{0}"); //{0} is placeholder and errors is the name of the controller /ApiError/404
+app.UseMiddleware<ExceptionMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -24,6 +28,7 @@ app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapControllers();
+
 /*create the Migration if there is no Migration*/
 using var scope = app.Services.CreateScope();
 var servics = scope.ServiceProvider;
@@ -37,7 +42,7 @@ try
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, " An error occured during migration");
+    logger.LogError(ex, "An error occured during migration");
 }
 
 app.Run();

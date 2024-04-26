@@ -4,59 +4,43 @@ using Core.Entites;
 using Core.Interfaces;
 using Core.Specification;
 using Microsoft.AspNetCore.Mvc;
+using Skinet.API.Errors;
 
-namespace API.Controllers
+namespace Skinet.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductsController : Controller
+    public class ProductsController : BaseApiController
     {
         private readonly ILogger<ProductsController> _logger;
         private readonly IGenericRepository<Product> _productRepo;
-        private readonly IGenericRepository<ProductBrand> _productbrandRepo;
-        private readonly IGenericRepository<ProductType> _productTypeRepo;
         private readonly IMapper _mapper;
 
         public ProductsController(
             ILogger<ProductsController> logger,
             IGenericRepository<Product> productRepo,
-            IGenericRepository<ProductBrand> productbrandRepo,
-            IGenericRepository<ProductType> productTypeRepo,
             IMapper mapper
             )
         {
             _logger = logger;
             _productRepo = productRepo;
-            _productbrandRepo = productbrandRepo;
-            _productTypeRepo = productTypeRepo;
             _mapper = mapper;
         }
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<ProductDTO>>> GetProducts()
         {
             _logger.LogInformation("Retrieving products...");
             var spec = new ProductsWithTypsAndBrandsSpecfication();
             var products = await _productRepo.ListAsync(spec);
             _logger.LogInformation($"Retrieved {products.Count} products");
 
-            return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products));
-        }
-
-        [HttpGet("brands")]
-        public async Task<ActionResult<IReadOnlyList<ProductBrand>>> GetProductsBrandsAsync()
-        {
-            var productsBrands = await _productbrandRepo.ListAllAsync();
-            return Ok(productsBrands);
-        }
-        [HttpGet("types")]
-        public async Task<ActionResult<IReadOnlyList<ProductType>>> GetProductsTypsAsync()
-        {
-            var productsBrands = await _productTypeRepo.ListAllAsync();
-            return Ok(productsBrands);
+            return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductDTO>>(products));
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ProductToReturnDto>> GetProduct(int id)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
             _logger.LogInformation($"Retrieving product with ID {id}");
 
@@ -65,17 +49,21 @@ namespace API.Controllers
             if (product != null)
             {
                 _logger.LogInformation($"Product with ID {id} retrieved successfully.");
-                return _mapper.Map<Product, ProductToReturnDto>(product);
+                return _mapper.Map<Product, ProductDTO>(product);
             }
             else
             {
                 _logger.LogWarning($"Product with ID {id} not found.");
-                return NotFound();
+                return NotFound(new ApiResponse(404));
             }
         }
 
+
         [HttpPut("UpdateProduct/{id}")]
-        public async Task<ActionResult<Product>> UpdateProduct(int id, ProductToReturnDto productDto)
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<ActionResult<Product>> UpdateProduct(int id, ProductDTO productDto)
         {
             if (id != productDto.Id)
             {
@@ -96,8 +84,9 @@ namespace API.Controllers
             return NoContent();
         }
 
+
         [HttpPost("AddProduct")]
-        public async Task<ActionResult<Product>> AddProduct(ProductToReturnDto productDto)
+        public async Task<ActionResult<Product>> AddProduct(ProductDTO productDto)
         {
             if (!ModelState.IsValid)
             {
