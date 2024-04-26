@@ -35,6 +35,7 @@ var servics = scope.ServiceProvider;
 var context = servics.GetRequiredService<StoreContext>();
 var logger = servics.GetRequiredService<ILogger<Program>>();
 try
+
 {
     await context.Database.MigrateAsync();
     await StoreContextSeed.SeedAsync(context);

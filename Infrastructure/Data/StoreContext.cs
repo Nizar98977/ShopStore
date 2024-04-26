@@ -1,6 +1,6 @@
 ﻿using Core.Entites;
+using Infrastructure.Data.Config;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 
 namespace Infrastructure.Data
 {
@@ -19,7 +19,7 @@ namespace Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+            modelBuilder.ApplyConfiguration<Product>(new ProductEntityTypeConfigurations());
         }
     }
 }
