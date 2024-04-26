@@ -25,7 +25,10 @@ namespace Infrastructure.Data
                 var products = JsonSerializer.Deserialize<List<Product>>(productData);
                 context.Products.AddRange(products);
             }
-            if (context.ChangeTracker.HasChanges()) await context.SaveChangesAsync();
+            if (context.ChangeTracker.HasChanges())
+            {
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

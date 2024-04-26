@@ -11,7 +11,7 @@ namespace Infrastructure.ExtensionServices
         {
             services.AddDbContext<StoreContext>(opt =>
             {
-                opt.UseSqlite(configuration.GetConnectionString("DefaultConnection"));
+                opt.UseSqlServer(configuration.GetConnectionString("ShopeStore"));
             });
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
