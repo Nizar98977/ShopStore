@@ -1,7 +1,8 @@
 ﻿using Core.Interfaces;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using ShopeStore.API.Errors;
 
 namespace Infrastructure.ExtensionServices
 {
@@ -16,6 +17,20 @@ namespace Infrastructure.ExtensionServices
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+            // Model State Validation Error Handling
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = actionContext =>
+                {
+                    var errors = actionContext.ModelState
+                        .Where(e => e.Value.Errors.Count > 0)
+                        .SelectMany(e => e.Value.Errors)
+                        .Select(x => x.ErrorMessage)
+                        .ToList();
+                    return new BadRequestObjectResult(new ApiValidationErrorResponse { Errors = errors });
+                };
+            });
         }
     }
 }

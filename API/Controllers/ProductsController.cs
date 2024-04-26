@@ -4,6 +4,7 @@ using Core.Entites;
 using Core.Interfaces;
 using Core.Specification;
 using Microsoft.AspNetCore.Mvc;
+using Skinet.API.Errors;
 
 namespace Skinet.API.Controllers
 {
@@ -13,22 +14,16 @@ namespace Skinet.API.Controllers
     {
         private readonly ILogger<ProductsController> _logger;
         private readonly IGenericRepository<Product> _productRepo;
-        private readonly IGenericRepository<ProductBrand> _productbrandRepo;
-        private readonly IGenericRepository<ProductType> _productTypeRepo;
         private readonly IMapper _mapper;
 
         public ProductsController(
             ILogger<ProductsController> logger,
             IGenericRepository<Product> productRepo,
-            IGenericRepository<ProductBrand> productbrandRepo,
-            IGenericRepository<ProductType> productTypeRepo,
             IMapper mapper
             )
         {
             _logger = logger;
             _productRepo = productRepo;
-            _productbrandRepo = productbrandRepo;
-            _productTypeRepo = productTypeRepo;
             _mapper = mapper;
         }
         [HttpGet]
@@ -42,20 +37,9 @@ namespace Skinet.API.Controllers
             return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products));
         }
 
-        [HttpGet("brands")]
-        public async Task<ActionResult<IReadOnlyList<ProductBrand>>> GetProductsBrandsAsync()
-        {
-            var productsBrands = await _productbrandRepo.ListAllAsync();
-            return Ok(productsBrands);
-        }
-        [HttpGet("types")]
-        public async Task<ActionResult<IReadOnlyList<ProductType>>> GetProductsTypsAsync()
-        {
-            var productsBrands = await _productTypeRepo.ListAllAsync();
-            return Ok(productsBrands);
-        }
-
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ProductToReturnDto>> GetProduct(int id)
         {
             _logger.LogInformation($"Retrieving product with ID {id}");
@@ -70,11 +54,15 @@ namespace Skinet.API.Controllers
             else
             {
                 _logger.LogWarning($"Product with ID {id} not found.");
-                return NotFound();
+                return NotFound(new ApiResponse(404));
             }
         }
 
+
         [HttpPut("UpdateProduct/{id}")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<ActionResult<Product>> UpdateProduct(int id, ProductToReturnDto productDto)
         {
             if (id != productDto.Id)
@@ -95,6 +83,7 @@ namespace Skinet.API.Controllers
 
             return NoContent();
         }
+
 
         [HttpPost("AddProduct")]
         public async Task<ActionResult<Product>> AddProduct(ProductToReturnDto productDto)
