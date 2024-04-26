@@ -5,11 +5,11 @@ using Core.Interfaces;
 using Core.Specification;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers
+namespace Skinet.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductsController : Controller
+    public class ProductsController : BaseApiController
     {
         private readonly ILogger<ProductsController> _logger;
         private readonly IGenericRepository<Product> _productRepo;
