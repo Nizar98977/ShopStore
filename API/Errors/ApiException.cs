@@ -1,4 +1,4 @@
-﻿namespace Skinet.API.Errors
+﻿namespace ShopeStore.API.Errors
 {
     public class ApiException : ApiResponse
     {

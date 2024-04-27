@@ -2,7 +2,7 @@
 using AutoMapper;
 using Core.Entites;
 
-namespace Skinet.API.Helpers
+namespace ShopeStore.API.Helpers
 {
     public class ProductUrlResolver : IValueResolver<Product, ProductDTO, string>
     {

@@ -6,8 +6,8 @@ namespace ShopeStore.API.Controllers
 {
     public class ProductBrandsController : Controller
     {
-        private readonly IGenericRepository<ProductBrand> _productbrandRepo;
-        public ProductBrandsController(IGenericRepository<ProductBrand> productbrandRepo)
+        private readonly IGenericService<ProductBrand> _productbrandRepo;
+        public ProductBrandsController(IGenericService<ProductBrand> productbrandRepo)
         {
             _productbrandRepo = productbrandRepo;
         }

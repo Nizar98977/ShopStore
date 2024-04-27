@@ -14,8 +14,8 @@ namespace Infrastructure.ExtensionServices
             {
                 opt.UseSqlServer(configuration.GetConnectionString("ShopeStore"));
             });
-            services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            services.AddScoped<IProductService, ProductRepository>();
+            services.AddScoped(typeof(IGenericService<>), typeof(GenericRepository<>));
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             // Model State Validation Error Handling

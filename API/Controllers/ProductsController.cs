@@ -2,38 +2,66 @@ using API.DTOs;
 using AutoMapper;
 using Core.Entites;
 using Core.Interfaces;
-using Core.Specification;
 using Microsoft.AspNetCore.Mvc;
-using Skinet.API.Errors;
+using ShopeStore.API.Errors;
+using System.Linq.Expressions;
 
-namespace Skinet.API.Controllers
+namespace ShopeStore.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class ProductsController : BaseApiController
     {
         private readonly ILogger<ProductsController> _logger;
-        private readonly IGenericRepository<Product> _productRepo;
+        private readonly IProductService _productService;
         private readonly IMapper _mapper;
 
         public ProductsController(
             ILogger<ProductsController> logger,
-            IGenericRepository<Product> productRepo,
+            IProductService productService,
             IMapper mapper
             )
         {
             _logger = logger;
-            _productRepo = productRepo;
+            _productService = productService;
             _mapper = mapper;
         }
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<ProductDTO>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<ProductDTO>>> GetProducts(string sortBy = null)
         {
-            _logger.LogInformation("Retrieving products...");
-            var products = await _productRepo.GetAllAsync(p => p.ProductType, products => products.ProductBrand);
-            _logger.LogInformation($"Retrieved {products.Count()} products");
+            try
+            {
+                _logger.LogInformation("Retrieving products...");
 
-            return Ok(_mapper.Map<IEnumerable<Product>, IReadOnlyList<ProductDTO>>(products));
+                if (sortBy == null)
+                {
+                    sortBy = "Name";
+                }
+
+                string[] sortByParts = sortBy.Split('-');
+                string propertyName = sortByParts[0];
+                string direction = sortByParts.Length > 1 ? sortByParts[1] : "asc";
+                bool isDescending = direction.Equals("desc", StringComparison.OrdinalIgnoreCase) ? true : false;
+
+                // Dynamic sorting logic
+                Expression<Func<Product, object>> orderByExpression = GetOrderByExpression(propertyName);
+
+                var products = await _productService.GetAllAsync(orderByExpression, isDescending, p => p.ProductType, p => p.ProductBrand);
+
+                _logger.LogInformation($"Retrieved {products.Count()} products");
+
+                if (!products.Any())
+                {
+                    return NotFound();
+                }
+
+                return Ok(_mapper.Map<IEnumerable<Product>, IReadOnlyList<ProductDTO>>(products));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving products: {Message}", ex.Message);
+                return StatusCode(500, "An error occurred while processing your request");
+            }
         }
 
         [HttpGet("{id}")]
@@ -42,7 +70,7 @@ namespace Skinet.API.Controllers
         public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
             _logger.LogInformation($"Retrieving product with ID {id}");
-            var product = await _productRepo.GetByIdAsync(id, p => p.ProductType, p => p.ProductBrand);
+            var product = await _productService.GetByIdAsync(id, p => p.ProductType, p => p.ProductBrand);
 
             if (product != null)
             {
@@ -56,6 +84,21 @@ namespace Skinet.API.Controllers
             }
         }
 
+        [HttpPost("AddProduct")]
+        public async Task<ActionResult<Product>> AddProduct(ProductDTO productDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            //add automapper here to map from the Dto to the Product
+            await _productService.InsertAsync(new Product { });
+
+            _logger.LogInformation($"Product with ID {productDto.Id} is added successfully");
+
+            return CreatedAtAction(nameof(GetProduct), new { id = productDto.Id }, productDto);
+        }
 
         [HttpPut("UpdateProduct/{id}")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -68,35 +111,42 @@ namespace Skinet.API.Controllers
                 return BadRequest("ID in the URL does not match the ID in the product data.");
             }
 
-            var existingProduct = await _productRepo.GetByIdAsync(id);
+            var existingProduct = await _productService.GetByIdAsync(id);
 
             if (existingProduct == null)
             {
                 return NotFound("Product not found.");
             }
             //use automapper to udpate the product here 
-            await _productRepo.UpdateAsync(existingProduct);
+            await _productService.UpdateAsync(existingProduct);
 
             _logger.LogInformation($"Product with ID {id} is updated successfully");
 
             return NoContent();
         }
 
-
-        [HttpPost("AddProduct")]
-        public async Task<ActionResult<Product>> AddProduct(ProductDTO productDto)
+        [HttpDelete("DeleteProduct/{id}")]
+        public async Task<IActionResult> DeleteProduct(int id)
         {
-            if (!ModelState.IsValid)
+            var actorDetails = await _productService.GetByIdAsync(id);
+            if (actorDetails == null)
             {
-                return BadRequest(ModelState);
+                _logger.LogError($"Product with ID {id} not found");
+                return NotFound("Product you are trying to delete is not found");
             }
+            await _productService.DeleteAsync(id);
 
-            //add automapper here to map from the Dto to the Product
-            await _productRepo.InsertAsync(new Product { });
+            return Ok("Product deleted successfully");
+        }
 
-            _logger.LogInformation($"Product with ID {productDto.Id} is added successfully");
-
-            return CreatedAtAction(nameof(GetProduct), new { id = productDto.Id }, productDto);
+        // Method to dynamically generate the OrderBy expression
+        private Expression<Func<Product, object>> GetOrderByExpression(string sortBy)
+        {
+            var parameter = Expression.Parameter(typeof(Product), "p");
+            var property = Expression.Property(parameter, sortBy);
+            var convertedProperty = Expression.Convert(property, typeof(object)); // Explicitly convert property to object
+            var lambda = Expression.Lambda<Func<Product, object>>(convertedProperty, parameter);
+            return lambda;
         }
     }
 }

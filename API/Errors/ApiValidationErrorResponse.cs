@@ -1,4 +1,4 @@
-﻿using Skinet.API.Errors;
+﻿using ShopeStore.API.Errors;
 
 namespace ShopeStore.API.Errors
 {

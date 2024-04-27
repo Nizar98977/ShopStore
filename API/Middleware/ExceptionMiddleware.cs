@@ -1,8 +1,8 @@
-﻿using Skinet.API.Errors;
+﻿using ShopeStore.API.Errors;
 using System.Net;
 using System.Text.Json;
 
-namespace Skinet.API.Middleware
+namespace ShopeStore.API.Middleware
 {
     public class ExceptionMiddleware
     {

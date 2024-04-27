@@ -1,14 +1,14 @@
 ﻿using Core.Entites;
 using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Skinet.API.Controllers;
+using ShopeStore.API.Controllers;
 
 namespace ShopeStore.API.Controllers
 {
     public class ProductTypesController : BaseApiController
     {
-        private readonly IGenericRepository<ProductType> _productTypeRepo;
-        public ProductTypesController(IGenericRepository<ProductType> productTypeRepo)
+        private readonly IGenericService<ProductType> _productTypeRepo;
+        public ProductTypesController(IGenericService<ProductType> productTypeRepo)
         {
             _productTypeRepo = productTypeRepo;
         }

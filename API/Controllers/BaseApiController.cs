@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Skinet.API.Controllers
+namespace ShopeStore.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
