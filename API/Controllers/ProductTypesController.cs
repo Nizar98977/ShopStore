@@ -17,7 +17,7 @@ namespace ShopeStore.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IReadOnlyList<ProductType>))]
         public async Task<ActionResult<IReadOnlyList<ProductType>>> GetProductsTypsAsync()
         {
-            var productsBrands = await _productTypeRepo.ListAllAsync();
+            var productsBrands = await _productTypeRepo.GetAllAsync();
             return Ok(productsBrands);
         }
     }

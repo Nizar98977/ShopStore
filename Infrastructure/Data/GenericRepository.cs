@@ -2,6 +2,8 @@
 using Core.Interfaces;
 using Core.Specification;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Data
 {
@@ -15,21 +17,20 @@ namespace Infrastructure.Data
 
         public async Task<T> GetByIdAsync(int id) => await _context.Set<T>().FindAsync(id);
 
-        public async Task<IReadOnlyList<T>> ListAllAsync() => await _context.Set<T>().ToListAsync();
-
-        public async Task<T> GetEntityWithSpec(ISpecification<T> spec)
+        public async Task<T> GetByIdAsync(int id, params Expression<Func<T, object>>[] includeProperties)
         {
-            return await ApplySpecification(spec).FirstOrDefaultAsync();
+            IQueryable<T> query = _context.Set<T>().Where(e => e.Id == id);
+            query = includeProperties.Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
+            return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec)
-        {
-            return await ApplySpecification(spec).ToListAsync();
-        }
+        public async Task<IEnumerable<T>> GetAllAsync() => await _context.Set<T>().ToListAsync();
 
-        private IQueryable<T> ApplySpecification(ISpecification<T> spec)
-        {                                             //product object                        
-            return SpicificationEvaluator<T>.GetQuery(_context.Set<T>().AsQueryable(), spec);
+        public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includeProperties)
+        {
+            IQueryable<T> query = _context.Set<T>();
+            query = includeProperties.Aggregate(query, (current, includeProperty) => current.Include(includeProperty));
+            return await query.ToListAsync();
         }
 
         public async Task<T> InsertAsync(T entity)
@@ -41,14 +42,18 @@ namespace Infrastructure.Data
 
         public async Task UpdateAsync(T entity)
         {
-            _context.Entry(entity).State = EntityState.Modified;
+            EntityEntry entityEntry = _context.Entry<T>(entity);
+            entityEntry.State = EntityState.Modified;
+
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(T entity)
+        public async Task DeleteAsync(int id)
         {
+            var entity = await _context.Set<T>().FirstOrDefaultAsync(n => n.Id == id);
             entity.IsDeleted = true;
-            _context.Entry(entity).State = EntityState.Modified;
+            EntityEntry entityEntry = _context.Entry<T>(entity);
+            entityEntry.State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
     }

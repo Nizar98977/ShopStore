@@ -30,11 +30,10 @@ namespace Skinet.API.Controllers
         public async Task<ActionResult<IReadOnlyList<ProductDTO>>> GetProducts()
         {
             _logger.LogInformation("Retrieving products...");
-            var spec = new ProductsWithTypsAndBrandsSpecfication();
-            var products = await _productRepo.ListAsync(spec);
-            _logger.LogInformation($"Retrieved {products.Count} products");
+            var products = await _productRepo.GetAllAsync(p => p.ProductType, products => products.ProductBrand);
+            _logger.LogInformation($"Retrieved {products.Count()} products");
 
-            return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductDTO>>(products));
+            return Ok(_mapper.Map<IEnumerable<Product>, IReadOnlyList<ProductDTO>>(products));
         }
 
         [HttpGet("{id}")]
@@ -43,9 +42,8 @@ namespace Skinet.API.Controllers
         public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
             _logger.LogInformation($"Retrieving product with ID {id}");
+            var product = await _productRepo.GetByIdAsync(id, p => p.ProductType, p => p.ProductBrand);
 
-            var spec = new ProductsWithTypsAndBrandsSpecfication(id);
-            var product = await _productRepo.GetEntityWithSpec(spec);
             if (product != null)
             {
                 _logger.LogInformation($"Product with ID {id} retrieved successfully.");
