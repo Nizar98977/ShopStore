@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Skinet.API.Errors;
+using ShopeStore.API.Errors;
 
-namespace Skinet.API.Controllers
+namespace ShopeStore.API.Controllers
 {
     public class NotFoundController : Controller
     {

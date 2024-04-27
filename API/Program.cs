@@ -1,7 +1,7 @@
 using Infrastructure.Data;
 using Infrastructure.ExtensionServices;
 using Microsoft.EntityFrameworkCore;
-using Skinet.API.Middleware;
+using ShopeStore.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
